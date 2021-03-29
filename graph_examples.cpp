@@ -178,10 +178,11 @@ void example_02()
         weightmap[e] = transmission_delay[j];
     }
 #else
-    Graph g(
-            edge_array, edge_array + num_edges, transmission_delay, num_vertices);
+    Graph g(edge_array, edge_array + num_edges, transmission_delay, num_vertices);
 #endif
 
+//    typedef boost::property_map< Graph, vertex_index_t>::type a_special_typedef;
+//    a_special_typedef vertex_id
     boost::property_map< Graph, vertex_index_t >::type vertex_id
             = get(vertex_index, g);
     boost::property_map< Graph, edge_weight_t >::type trans_delay
@@ -201,8 +202,7 @@ void example_02()
                   << name[get(vertex_id, target(*ei, g))] << ") ";
     std::cout << std::endl;
 
-    std::for_each(vertices(g).first, vertices(g).second,
-                  exercise_vertex< Graph >(g, name));
+    std::for_each(vertices(g).first, vertices(g).second, exercise_vertex< Graph >(g, name));
 
     std::map< std::string, std::string > graph_attr, vertex_attr, edge_attr;
     graph_attr["size"] = "3,3";

@@ -5,7 +5,11 @@
 #include "graph_examples.h"
 #include "boost_getting_started.h"
 
+#include<vector>
+
+
 int main() {
+
 
     //example_00();
 

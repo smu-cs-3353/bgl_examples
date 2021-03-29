@@ -21,7 +21,6 @@
 using namespace boost;
 
 typedef adjacency_list<vecS, vecS, bidirectionalS> Graph;
-
 void example_01 ();
 void example_02();
 
