@@ -76,16 +76,23 @@ void example_01 () {
 //=======================================================================
 
 // from https://www.boost.org/doc/libs/1_75_0/libs/graph/example/quick_tour.cpp
+// Modifications for clarity by Mark Fontenot
 
 using namespace boost;
 
 template < class Graph > struct exercise_vertex
 {
+    //state vars
+    Graph& g;
+    const char* name;
+
+    //Constructor
     exercise_vertex(Graph& g_, const char name_[]) : g(g_), name(name_) {}
+
+    //vertex descriptor
     typedef typename graph_traits< Graph >::vertex_descriptor Vertex;
     void operator()(const Vertex& v) const
     {
-        using namespace boost;
         typename property_map< Graph, vertex_index_t >::type vertex_id
                 = get(vertex_index, g);
         std::cout << "vertex: " << name[get(vertex_id, v)] << std::endl;
@@ -94,8 +101,7 @@ template < class Graph > struct exercise_vertex
         std::cout << "\tout-edges: ";
         typename graph_traits< Graph >::out_edge_iterator out_i, out_end;
         typename graph_traits< Graph >::edge_descriptor e;
-        for (boost::tie(out_i, out_end) = out_edges(v, g); out_i != out_end;
-             ++out_i)
+        for (boost::tie(out_i, out_end) = out_edges(v, g); out_i != out_end; ++out_i)
         {
             e = *out_i;
             Vertex src = source(e, g), targ = target(e, g);
@@ -124,16 +130,15 @@ template < class Graph > struct exercise_vertex
             std::cout << name[get(vertex_id, *ai)] << " ";
         std::cout << std::endl;
     }
-    Graph& g;
-    const char* name;
+
 };
 
 void example_02()
 {
-    // create a typedef for the Graph type
+    // create a typedef for the Graph_type type
     typedef adjacency_list< vecS, vecS, bidirectionalS, no_property,
             property< edge_weight_t, float > >
-            Graph;
+            Graph_type;
 
     // Make convenient labels for the vertices
     enum
@@ -167,42 +172,96 @@ void example_02()
     // declare a graph object, adding the edges and edge properties
 #if defined(BOOST_MSVC) && BOOST_MSVC <= 1300
     // VC++ can't handle the iterator constructor
-    Graph g(num_vertices);
-    property_map< Graph, edge_weight_t >::type weightmap = get(edge_weight, g);
+    Graph_type g(num_vertices);
+    property_map< Graph_type, edge_weight_t >::type weightmap = get(edge_weight, g);
     for (std::size_t j = 0; j < num_edges; ++j)
     {
-        graph_traits< Graph >::edge_descriptor e;
+        graph_traits< Graph_type >::edge_descriptor e;
         bool inserted;
         boost::tie(e, inserted)
             = add_edge(edge_array[j].first, edge_array[j].second, g);
         weightmap[e] = transmission_delay[j];
     }
 #else
-    Graph g(edge_array, edge_array + num_edges, transmission_delay, num_vertices);
+    Graph_type g(edge_array, edge_array + num_edges, transmission_delay, num_vertices);
 #endif
 
-//    typedef boost::property_map< Graph, vertex_index_t>::type a_special_typedef;
+//    typedef boost::property_map< Graph_type, vertex_index_t>::type a_special_typedef;
 //    a_special_typedef vertex_id
-    boost::property_map< Graph, vertex_index_t >::type vertex_id
+
+    /** get all the vertices from graph g
+     *
+     *  note that the 'get' function is 1) global and 2) overloaded to operate
+     *  on different types, the adjacency list object in these cases.
+     */
+
+    boost::property_map< Graph_type, vertex_index_t >::type vertex_id
             = get(vertex_index, g);
-    boost::property_map< Graph, edge_weight_t >::type trans_delay
+
+    /**
+     * get all the edge weights from the graph g
+     */
+    boost::property_map< Graph_type, edge_weight_t >::type trans_delay
             = get(edge_weight, g);
 
+    /**
+     * print out the vertices using a vertex iterator
+     */
     std::cout << "vertices(g) = ";
-    typedef graph_traits< Graph >::vertex_iterator vertex_iter;
+
+    //create the vertex iterator for graph type
+    typedef graph_traits< Graph_type >::vertex_iterator vertex_iter;
+
+    //the vertices(..) function returns a pair of iterators... first is
+    //the start, second is the end. we use those in the loop
     std::pair< vertex_iter, vertex_iter > vp;
-    for (vp = vertices(g); vp.first != vp.second; ++vp.first)
-        std::cout << name[get(vertex_id, *vp.first)] << " ";
-    std::cout << std::endl;
+    typedef graph_traits <Graph_type>::vertex_descriptor Vertex;
+    for (vp = vertices(g); vp.first != vp.second; ++vp.first) {
+        Vertex v = *vp.first;
+        std::cout << vertex_id[v] << " ";
+//        std::cout << name[get(vertex_id, *vp.first)] << " ";
+    }
+    std::cout << std::endl << std::endl;
 
+    //another way using boost::tie
+    std::cout << "Another way to print vertices... " << std::endl;
+    vertex_iter v_start, v_end;
+    for(boost::tie(v_start, v_end) = vertices(g); v_start != v_end; ++v_start) {
+        Vertex v = *v_start;
+        std::cout << vertex_id[v] << " ";
+    }
+    std::cout << std::endl << std::endl;
+
+    /**
+     * print out each of the edges using an edge iterator
+     */
     std::cout << "edges(g) = ";
-    graph_traits< Graph >::edge_iterator ei, ei_end;
-    for (boost::tie(ei, ei_end) = edges(g); ei != ei_end; ++ei)
-        std::cout << "(" << name[get(vertex_id, source(*ei, g))] << ","
-                  << name[get(vertex_id, target(*ei, g))] << ") ";
-    std::cout << std::endl;
 
-    std::for_each(vertices(g).first, vertices(g).second, exercise_vertex< Graph >(g, name));
+    //typedef for edge descriptor for each edge
+    typedef graph_traits< Graph_type >::edge_descriptor Edge_info;
+
+    // create two iterators that will be the return value of edges(g)
+    graph_traits< Graph_type >::edge_iterator ei_start, ei_end;
+
+    for (boost::tie(ei_start, ei_end) = edges(g); ei_start != ei_end; ++ei_start) {
+        Edge_info e = *ei_start;
+        Vertex src = source(e, g);
+        Vertex tgt = target(e, g);
+        std::cout << "(" << vertex_id[src] << ", " << vertex_id[tgt] << ") ";
+//        std::cout << "(" << name[get(vertex_id, source(*ei_start, g))] << ","
+//                  << name[get(vertex_id, target(*ei_start, g))] << ") ";
+    }
+    std::cout << std::endl << std::endl;
+
+    std::cout << "Printing vertices using a for_each loop and a lambda...\n";
+    std::for_each(vertices(g).first, vertices(g).second, [](const Vertex& v){ std::cout << v << " ";});
+    std::cout << std::endl << std::endl;
+
+
+    /**
+     * Using a for_each loop to process each vertex of the graph
+     */
+    std::for_each(vertices(g).first, vertices(g).second, exercise_vertex< Graph_type >(g, name));
 
     std::map< std::string, std::string > graph_attr, vertex_attr, edge_attr;
     graph_attr["size"] = "3,3";

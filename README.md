@@ -1,8 +1,8 @@
-# Boost Graph Library Example Code Repo
+# Boost Graph_type Library Example Code Repo
 
 *Work in progress right now*
 
-This repo contains some code examples to explore Boost Graph Library for spring 2021's 3353 class. 
+This repo contains some code examples to explore Boost Graph_type Library for spring 2021's 3353 class. 
 
 ## Reference Links:
 
